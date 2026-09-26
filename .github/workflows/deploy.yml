@@ -1,0 +1,56 @@
+name: Test, Build ve Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Repoyu al
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Node.js hazirla
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Bagimliliklari kur
+        run: npm ci
+
+      - name: Testleri calistir
+        run: npm test
+
+      - name: Uretim dosyalarini olustur
+        run: npm run build
+
+      - name: VPS'e yayinla
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          trap 'rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts' EXIT
+          release_id="$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          tar -czf release.tar.gz -C dist .
+          ssh_options=(-i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15)
+          scp "${ssh_options[@]}" release.tar.gz "deploy@$VPS_HOST:/var/www/cicd-demo/uploads/$release_id.tar.gz"
+          ssh "${ssh_options[@]}" "deploy@$VPS_HOST" "bash -s -- '$release_id'" < scripts/deploy.sh

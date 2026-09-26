@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>İndirim Hesaplayıcı | CI/CD Demo</title>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">POYRAZ AVSEVER · CI/CD DEMO</p>
+      <h1>İndirim Hesaplayıcı</h1>
+      <p>İlk sürüm yayında.</p>
+      <form id="calculator">
+        <label for="price">Ürün fiyatı (TL)</label>
+        <input id="price" type="number" min="0" step="0.01" value="1000" required />
+        <label for="discount">İndirim oranı (%)</label>
+        <input id="discount" type="number" min="0" max="100" step="0.01" value="20" required />
+        <button type="submit">Hesapla</button>
+      </form>
+      <output id="result" aria-live="polite"></output>
+      <footer>GitHub Actions ile test edildi ve yayınlandı.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
